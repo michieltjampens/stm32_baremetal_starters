@@ -16,17 +16,19 @@ uint8_t i2c_cnt=0x00;
 __INLINE void I2C1_Configure_Slave(void){
   /* GPIO Setup, PB6=SCL and PB7=SDA */
   SET_BIT(RCC->IOPENR,RCC_IOPENR_GPIOBEN);  // Enable the peripheral clock of GPIOB
-  MODIFY_REG(GPIOB->MODER, GPIO_MODER_MODE6|GPIO_MODER_MODE7, GPIO_MODER_MODE6_1|GPIO_MODER_MODE7_1); //Use AF
-  GPIOB->AFR[0] = (GPIOB->AFR[0] &~ (0x00000FF0)) | (1 << (6 * 4)) | (1 << (7 * 4)); // Pick AF1 (I2C1)
-  GPIOB->OTYPER |= GPIO_OTYPER_OT_6 | GPIO_OTYPER_OT_7; // Open drain
+  MODIFY_REG(GPIOB->MODER, GPIO_MODER_MODE6|GPIO_MODER_MODE7, GPIO_MODER_MODE6_1|GPIO_MODER_MODE7_1); //Use AF  
+  // AF1 for I2C
+  MODIFY_REG( GPIOA->AFR[1], GPIO_AFRH_AFSEL6|GPIO_AFRH_AFSEL7, (1 << GPIO_AFRH_AFSEL6_Pos) | (1 << GPIO_AFRH_AFSEL7_Pos) );
+  
+  SET_BIT(GPIOB->OTYPER, GPIO_OTYPER_OT_6 | GPIO_OTYPER_OT_7); // Open drain
 
   SET_BIT(RCC->APB1ENR,RCC_APB1ENR_I2C1EN); // Enable the peripheral clock I2C1 do this before GPIO's
 
   /* Configure I2C1 as slave */
-  I2C1->CR1 = I2C_CR1_PE | I2C_CR1_ADDRIE; /* Periph enable, address match interrupt enable */
-  I2C1->OAR1 |= (uint32_t)(I2C1_OWN_ADDRESS << 1); /* 7-bit address = 0x5A (see .h) */
-  I2C1->OAR1 |= I2C_OAR1_OA1EN; /* Enable own address 1 */
-  SET_BIT(I2C1->CR1,I2C_CR1_RXIE | I2C_CR1_TXIE); // Enable Receive and transmit interrupt
+  I2C1->CR1 = I2C_CR1_PE | I2C_CR1_ADDRIE; 		   // Periph enable, address match interrupt enable 
+  I2C1->OAR1 |= (uint32_t)(I2C1_OWN_ADDRESS << 1); // 7-bit address = 0x5A (see .h) 
+  SET_BIT( I2C1->OAR1, I2C_OAR1_OA1EN ); 		   // Enable own address 1 */
+  SET_BIT( I2C1->CR1,I2C_CR1_RXIE | I2C_CR1_TXIE); // Enable Receive and transmit interrupt
 
   /* Configure Interrupts */
   NVIC_SetPriority(I2C1_IRQn, 0);
